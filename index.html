@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Permission</title>
+</head>
+<body>
+    <h1>Camera Permission Request</h1>
+    <!-- Button for camera -->
+    <button id="toggleCamera">Allow Camera Access</button>
+
+    <script>
+        let stream = null;
+        const button = document.getElementById('toggleCamera');
+        // Check if we have an active stream
+        let isCameraActive = localStorage.getItem('cameraActive') === 'true';
+
+        if (isCameraActive) {
+            button.textContent = 'Stop Camera';
+        } else {
+            button.textContent = 'Allow Camera Access';
+        }
+
+        async function handleCameraToggle() {
+            if (!stream && !isCameraActive) {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    stream.getTracks().forEach(track => track.stop()); // Stop the tracks to release the camera
+                    localStorage.setItem('cameraActive', 'true');
+                    console.log(isCameraActive);
+                    window.location.href = './camera.html'; // Redirect to camera.php
+                } catch (err) {
+                    console.error('Error accessing camera:', err);
+                    alert('Camera access is required to use this feature.');
+                }
+            } else {
+                // Stop the camera
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                    stream = null;
+                }
+                localStorage.setItem('cameraActive', 'false');
+                button.textContent = 'Allow Camera Access';
+            }
+        }
+
+        button.addEventListener('click', handleCameraToggle);
+
+        // To auto-stop the camera when the user returns to index.php from camera.php
+        if (isCameraActive) {
+            (async () => {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    stream.getTracks().forEach(track => track.stop());
+                } catch (err) {
+                    console.error('Error stopping camera:', err);
+                }
+                localStorage.setItem('cameraActive', 'false');
+                button.textContent = 'Allow Camera Access';
+                isCameraActive = false; //Manually set to false
+                stream = null; //Manually set to false
+            })();
+        }
+    </script>
+</body>
+</html>
